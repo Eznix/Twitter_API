@@ -108,7 +108,7 @@ class TweetAnalyzer():
     """
 
     def clean_tweet(self, tweet):
-        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(w+:\/\/\S+)", " ", tweet).split())
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
         
     def analyze_sentiment(self, tweet):
         analysis = TextBlob(self.clean_tweet(tweet))
@@ -122,16 +122,31 @@ class TweetAnalyzer():
 
     def tweets_to_data_frame(self, tweets):
         df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns =['tweets'])
-        
+    
         df['id'] = np.array([tweet.id for tweet in tweets])
         df['len'] = np.array([len(tweet.text) for tweet in tweets])
         df['date'] = np.array([tweet.created_at for tweet in tweets])
         df['source'] = np.array([tweet.source for tweet in tweets])
         df['likes'] = np.array([tweet.favorite_count for tweet in tweets])
         df['retweets'] = np.array([tweet.retweet_count for tweet in tweets])
-        df['sentiment'] = np.array([tweet_analyzer.analyze_sentiment(tweet) for tweet in tweets])
+        df['sentiment'] = np.array([tweet_analyzer.analyze_sentiment(tweet) for tweet in df['tweets']])
        
         return df
+
+class MakeGraph():
+
+    def init_Graph(self):
+        #Likes:
+        time_likes = pd.Series(data=df['likes'].values, index = df['date'])
+        time_likes.plot(figsize = (16,4), label = 'likes', legend = True)
+        #Retweets:
+        time_retweets = pd.Series(data=df['retweets'].values, index=df['date'])
+        time_retweets.plot(figsize = (16,4),label = 'retweets', legend = True)
+        #Sentiment:
+        time_sentiment = pd.Series(data=df['sentiment'].values, index=df['date'])
+        time_sentiment.plot(figsize = (16,4), label = 'sentiment', legend = True)
+        
+
 
 if __name__ == "__main__":
 
@@ -143,6 +158,8 @@ if __name__ == "__main__":
     tweets = api.user_timeline(screen_name="realDonaldTrump", count=200)    
 
     df = tweet_analyzer.tweets_to_data_frame(tweets)
+    graph = MakeGraph()
+    graph.init_Graph()
 
     plt.show()
     print(df.head(10))
